@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ── TELA ── */
+.rel-header {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  margin-bottom: 24px;
+}
+.placar-destaque {
+  background: linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 28px; text-align:center; margin-bottom: 24px;
+}
+.podio-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px; }
+.podio-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; text-align:center;
+}
+
+/* ── CARD DO JOGADOR (tela) ── */
+.jog-card {
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; margin-bottom: 14px; background: var(--bg2);
+}
+.jog-top {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  flex-wrap:wrap; gap:12px; margin-bottom:14px;
+}
+.jog-info { display:flex; align-items:center; gap:12px; }
+.jog-camisa {
+  font-family:'Barlow Condensed'; font-size:36px; font-weight:900;
+  color:var(--accent); line-height:1;
+}
+.jog-nome {
+  font-family:'Barlow Condensed'; font-size:22px; font-weight:900; line-height:1.1;
+}
+
+/* Barra de aproveitamento */
+.aprov-row {
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+}
+.aprov-pct {
+  font-family:'Barlow Condensed'; font-size:40px; font-weight:900; line-height:1;
+  min-width: 80px;
+}
+.aprov-bar-wrap {
+  flex:1; background:var(--bg3); border-radius:4px; height:10px; overflow:hidden;
+}
+.aprov-bar { height:100%; border-radius:4px; transition:width .5s; }
+
+/* Grid de stats minimalista */
+.stats-mini {
+  display:flex; flex-wrap:wrap; gap:10px;
+}
+.stat-item {
+  display:flex; flex-direction:column; align-items:center;
+  min-width:64px; padding:8px 12px;
+  background:var(--bg3); border-radius:8px;
+}
+.stat-val {
+  font-family:'Barlow Condensed'; font-size:28px; font-weight:900; line-height:1;
+}
+.stat-lbl { font-size:10px; color:var(--muted); margin-top:2px; text-align:center; }
+
+/* ── IMPRESSÃO ── */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .sidebar, .no-print { display:none !important; }
+  .main { margin-left:0 !important; padding:12px !important; }
+  body { background:#fff !important; color:#111 !important; }
+
+  .print-header {
+    display:flex !important; justify-content:space-between;
+    align-items:center; border-bottom:2px solid #111; padding-bottom:8px;
+    margin-bottom:14px;
+  }
+  .print-titulo { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:900; }
+  .print-placar { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:900; }
+
+  /* cada card de jogador na impressão */
+  .print-card {
+    display:flex !important;
+    border: 1.5px solid #ddd; border-radius:8px;
+    padding: 10px 14px; margin-bottom:8px;
+    break-inside: avoid; page-break-inside: avoid;
+    background:#fff !important;
+    align-items:flex-start; gap:16px;
+  }
+  .print-card-left { min-width:180px; }
+  .print-card-nome {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:18px; font-weight:900; line-height:1.1; color:#111;
+  }
+  .print-card-pos {
+    font-size:11px; color:#666; margin-top:2px;
+  }
+  .print-card-aprov {
+    display:flex; align-items:center; gap:8px; margin-top:6px;
+  }
+  .print-aprov-num {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:32px; font-weight:900; line-height:1;
+  }
+  .print-bar-wrap {
+    flex:1; background:#eee; border-radius:3px; height:8px; overflow:hidden;
+  }
+  .print-bar { height:100%; border-radius:3px; }
+
+  .print-card-right { flex:1; }
+  .print-stats-grid {
+    display:flex !important; flex-wrap:wrap; gap:6px; margin-top:4px;
+  }
+  .print-stat {
+    display:flex !important; flex-direction:column; align-items:center;
+    padding:4px 10px; border-radius:6px; min-width:52px;
+    background:#f4f4f4 !important;
+  }
+  .print-stat-val {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:22px; font-weight:900; line-height:1; color:#111;
+  }
+  .print-stat-lbl { font-size:9px; color:#666; text-align:center; }
+  .print-stat.ok  { background:#e8f8ee !important; }
+  .print-stat.err { background:#fdeaea !important; }
+  .print-stat.neu { background:#f4f4f4 !important; }
+
+  /* hide tela, show print */
+  .screen-only { display:none !important; }
+  .print-only  { display:block !important; }
+}
+@media screen {
+  .print-only { display:none !important; }
+  .screen-only { display:block !important; }
+}
+</style>
+
+<!-- CABEÇALHO TELA -->
+<div class="rel-header no-print screen-only">
+  <div class="page-header" style="margin-bottom:0">
+    <h2>📊 RELATÓRIO DA PARTIDA</h2>
+    <p>{{ partida['titulo'] }} — {{ partida['time_a'] }} {{ partida['placar_a'] }} × {{ partida['placar_b'] }} {{ partida['time_b'] }}</p>
+  </div>
+  <div style="display:flex;gap:10px">
+    {% if partida['status']=='em_andamento' %}
+    <a href="/partida/{{ partida['id'] }}" class="btn btn-primary">← Voltar à Partida</a>
+    {% endif %}
+    <a href="/partidas" class="btn btn-secondary">📋 Partidas</a>
+    <button onclick="window.print()" class="btn btn-secondary">🖨 Imprimir</button>
+  </div>
+</div>
+
+<!-- PLACAR (tela) -->
+<div class="placar-destaque screen-only">
+  <div style="font-family:'Barlow Condensed';font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Placar Final</div>
+  <div style="display:flex;justify-content:center;align-items:center;gap:24px">
+    <div>
+      <div style="font-family:'Barlow Condensed';font-size:18px;font-weight:800">{{ partida['time_a'] }}</div>
+      <div style="font-family:'Barlow Condensed';font-size:72px;font-weight:900;color:var(--accent);line-height:1">{{ partida['placar_a'] }}</div>
+    </div>
+    <div style="font-family:'Barlow Condensed';font-size:40px;color:var(--muted)">×</div>
+    <div>
+      <div style="font-family:'Barlow Condensed';font-size:18px;font-weight:800">{{ partida['time_b'] }}</div>
+      <div style="font-family:'Barlow Condensed';font-size:72px;font-weight:900;color:var(--accent);line-height:1">{{ partida['placar_b'] }}</div>
+    </div>
+  </div>
+</div>
+
+{% if dados %}
+<!-- PÓDIO (tela) -->
+<div class="podio-grid screen-only">
+  {% if dados|length > 0 %}
+  <div class="podio-card" style="border-color:var(--accent)">
+    <div style="font-size:28px;margin-bottom:4px">🏆</div>
+    <div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">MVP</div>
+    <div style="font-family:'Barlow Condensed';font-size:22px;font-weight:900;color:var(--accent);margin-top:4px">{{ dados[0]['jogador']['nome'] }}</div>
+    <div style="color:var(--muted);font-size:13px">{{ dados[0]['pontos'] }} pts · {{ dados[0]['eficiencia'] }}%</div>
+  </div>
+  {% endif %}
+  {% if dados|length > 1 %}
+  <div class="podio-card">
+    <div style="font-size:28px;margin-bottom:4px">🥈</div>
+    <div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">2º</div>
+    <div style="font-family:'Barlow Condensed';font-size:22px;font-weight:900;margin-top:4px">{{ dados[1]['jogador']['nome'] }}</div>
+    <div style="color:var(--muted);font-size:13px">{{ dados[1]['pontos'] }} pts · {{ dados[1]['eficiencia'] }}%</div>
+  </div>
+  {% endif %}
+  {% if dados|length > 2 %}
+  <div class="podio-card">
+    <div style="font-size:28px;margin-bottom:4px">🥉</div>
+    <div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">3º</div>
+    <div style="font-family:'Barlow Condensed';font-size:22px;font-weight:900;margin-top:4px">{{ dados[2]['jogador']['nome'] }}</div>
+    <div style="color:var(--muted);font-size:13px">{{ dados[2]['pontos'] }} pts · {{ dados[2]['eficiencia'] }}%</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     CARDS DE JOGADORES — TELA
+══════════════════════════════════════════════════ -->
+<div class="card screen-only">
+  <h3 style="font-family:'Barlow Condensed';font-size:20px;font-weight:800;margin-bottom:20px">ESTATÍSTICAS INDIVIDUAIS</h3>
+  {% for d in dados %}
+  {% set j = d['jogador'] %}
+  {% set cfg = d['config'] %}
+  {% set eff = [d['eficiencia'], 0]|max %}
+  {% set eff = [eff, 100]|min %}
+  {% set cor_eff = 'var(--green)' if d['eficiencia'] > 30 else ('var(--yellow)' if d['eficiencia'] > 0 else 'var(--red)') %}
+  <div class="jog-card">
+    <!-- Topo: nome + posição -->
+    <div class="jog-top">
+      <div class="jog-info">
+        <div class="jog-camisa">#{{ j['camisa'] }}</div>
+        <div>
+          <div class="jog-nome">{{ j['nome'] }}</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:3px">
+            <span class="badge badge-pos">{{ j['posicao'] }}</span>
+            <span style="color:var(--muted);font-size:12px">{{ j['time'] }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Aproveitamento</div>
+        <div style="font-family:'Barlow Condensed';font-size:38px;font-weight:900;line-height:1;color:{{ cor_eff }}">
+          {{ d['eficiencia'] }}%
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra -->
+    <div class="aprov-bar-wrap" style="margin-bottom:14px">
+      <div class="aprov-bar" style="width:{{ eff }}%;background:{{ cor_eff }}"></div>
+    </div>
+
+    <!-- Stats individuais minimalistas -->
+    {% if d['stats'] %}
+    <div class="stats-mini">
+      {% if cfg and cfg.get('labels') %}
+        {% for stat, label in cfg['labels'].items() %}
+          {% if d['stats'].get(stat, 0) > 0 %}
+          {% set isErr = 'erro' in stat %}
+          <div class="stat-item">
+            <div class="stat-val" style="color:{{ 'var(--red)' if isErr else 'var(--green)' if 'ataque' in stat or 'ace' in stat or 'bloqueio' in stat or 'assistencia' in stat else 'var(--blue)' }}">
+              {{ d['stats'][stat] }}
+            </div>
+            <div class="stat-lbl">{{ label | replace('⚡ ','') | replace('✗ ','') | replace('🎾 ','') | replace('🔥 ','') | replace('🛡 ','') | replace('🎯 ','') | replace('↓ ','') | replace('→ ','') | replace('🤚 ','') }}</div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        {% for stat, qtd in d['stats'].items() %}
+        <div class="stat-item">
+          <div class="stat-val">{{ qtd }}</div>
+          <div class="stat-lbl">{{ stat }}</div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     VERSÃO IMPRESSÃO
+══════════════════════════════════════════════════ -->
+<div class="print-only">
+  <div class="print-header">
+    <div>
+      <div class="print-titulo">{{ partida['titulo'] }}</div>
+      <div style="font-size:12px;color:#666">{{ partida['time_a'] }} vs {{ partida['time_b'] }}</div>
+    </div>
+    <div class="print-placar">{{ partida['placar_a'] }} × {{ partida['placar_b'] }}</div>
+  </div>
+
+  {% for d in dados %}
+  {% set j = d['jogador'] %}
+  {% set cfg = d['config'] %}
+  {% set eff = [d['eficiencia'], 0]|max %}
+  {% set eff = [eff, 100]|min %}
+  {% set cor_p = '#16a34a' if d['eficiencia'] > 30 else ('#ca8a04' if d['eficiencia'] > 0 else '#dc2626') %}
+
+  <div class="print-card">
+    <!-- ESQUERDA: nome + aproveitamento -->
+    <div class="print-card-left">
+      <div class="print-card-nome">#{{ j['camisa'] }} {{ j['nome'] }}</div>
+      <div class="print-card-pos">{{ j['posicao'] }} · {{ j['time'] }}</div>
+      <div class="print-card-aprov">
+        <div class="print-aprov-num" style="color:{{ cor_p }}">{{ d['eficiencia'] }}%</div>
+        <div style="flex:1">
+          <div class="print-bar-wrap">
+            <div class="print-bar" style="width:{{ eff }}%;background:{{ cor_p }}"></div>
+          </div>
+          <div style="font-size:9px;color:#888;margin-top:2px">aproveitamento</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIREITA: stats individuais -->
+    <div class="print-card-right">
+      <div class="print-stats-grid">
+        {% if cfg and cfg.get('labels') %}
+          {% for stat, label in cfg['labels'].items() %}
+            {% if d['stats'].get(stat, 0) > 0 %}
+            {% set isErr = 'erro' in stat %}
+            {% set isPonto = 'ataque' in stat or 'ace' in stat or 'bloqueio' in stat or 'assistencia' in stat %}
+            <div class="print-stat {{ 'err' if isErr else ('ok' if isPonto else 'neu') }}">
+              <div class="print-stat-val">{{ d['stats'][stat] }}</div>
+              <div class="print-stat-lbl">{{ label | replace('⚡ ','') | replace('✗ ','') | replace('🎾 ','') | replace('🔥 ','') | replace('🛡 ','') | replace('🎯 ','') | replace('↓ ','') | replace('→ ','') | replace('🤚 ','') }}</div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          {% for stat, qtd in d['stats'].items() %}
+          <div class="print-stat neu">
+            <div class="print-stat-val">{{ qtd }}</div>
+            <div class="print-stat-lbl">{{ stat }}</div>
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div style="margin-top:12px;font-size:9px;color:#999;border-top:1px solid #ddd;padding-top:6px">
+    Eficiência = (Pontos − Erros) ÷ Total × 100 · VôleiStats Pro
+  </div>
+</div>
+
+{% else %}
+<div class="card" style="text-align:center;padding:48px;color:var(--muted)">
+  Nenhuma estatística registrada ainda.
+</div>
+{% endif %}
+
+<div class="screen-only" style="margin-top:16px;padding:12px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--muted)">
+  <strong style="color:var(--text)">Eficiência:</strong> (Pontos − Erros) ÷ Total de Ações × 100
+</div>
+{% endblock %}

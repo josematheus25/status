@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+  <h2>👤 JOGADORES</h2>
+  <p>Cadastre e gerencie os atletas do sistema</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start">
+  <!-- Lista -->
+  <div class="card">
+    <h3 style="font-family:'Barlow Condensed';font-size:18px;font-weight:800;margin-bottom:18px">
+      ATLETAS CADASTRADOS ({{ jogadores|length }})
+    </h3>
+    {% if jogadores %}
+    <table>
+      <tr>
+        <th>#</th><th>Nome</th><th>Time</th><th>Posição</th><th></th>
+      </tr>
+      {% for j in jogadores %}
+      <tr>
+        <td><span style="font-family:'Barlow Condensed';font-size:20px;font-weight:800;color:var(--accent)">{{ j['camisa'] }}</span></td>
+        <td><strong>{{ j['nome'] }}</strong></td>
+        <td>{{ j['time'] }}</td>
+        <td><span class="badge badge-pos">{{ j['posicao'] }}</span></td>
+        <td>
+          <form action="/jogadores/deletar/{{ j['id'] }}" method="post" style="display:inline" onsubmit="return confirm('Remover {{ j['nome'] }}?')">
+            <button type="submit" class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p style="color:var(--muted);text-align:center;padding:40px">Nenhum jogador cadastrado ainda.</p>
+    {% endif %}
+  </div>
+
+  <!-- Formulário -->
+  <div class="card">
+    <h3 style="font-family:'Barlow Condensed';font-size:18px;font-weight:800;margin-bottom:18px">+ NOVO JOGADOR</h3>
+    <form action="/jogadores/novo" method="post">
+      <div class="form-row">
+        <div>
+          <label>Nome completo</label>
+          <input type="text" name="nome" placeholder="Ex: José Silva" required>
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div>
+          <label>Número da camisa</label>
+          <input type="number" name="camisa" placeholder="12" min="1" max="99" required>
+        </div>
+        <div>
+          <label>Time</label>
+          <input type="text" name="time" placeholder="Ex: ISR" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Posição</label>
+          <select name="posicao" required>
+            <option value="">Selecione...</option>
+            {% for pos in posicoes %}
+            <option value="{{ pos }}">{{ pos }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <button type="submit" class="btn btn-primary" style="width:100%">✓ CADASTRAR JOGADOR</button>
+      </div>
+    </form>
+    
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">POSIÇÕES DISPONÍVEIS</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        {% for pos in posicoes %}
+        <span class="badge badge-pos">{{ pos }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

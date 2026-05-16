@@ -1,0 +1,503 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.placar-bar {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.placar-times { font-family:'Barlow Condensed'; font-size:22px; font-weight:900; }
+.placar-num {
+  font-family:'Barlow Condensed'; font-size:56px; font-weight:900;
+  color: var(--accent); line-height:1;
+}
+.placar-sep { font-family:'Barlow Condensed'; font-size:36px; color:var(--muted); margin:0 16px; }
+.placar-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px;
+  padding: 6px 14px; cursor:pointer; font-size:20px;
+}
+.placar-btn:hover { background: var(--border); }
+
+.quadra-wrap {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; margin-bottom: 14px;
+}
+.sec-label {
+  font-family:'Barlow Condensed'; font-size:12px; font-weight:700;
+  color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;
+}
+.quadra-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* card do jogador */
+.pos-slot {
+  background: var(--bg3); border: 2px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+  transition: border-color .15s;
+  display: flex; flex-direction: column;
+}
+.pos-slot.ativo  { border-color: var(--accent); }
+.pos-slot.libero { border-color: var(--blue); }
+
+.slot-head {
+  padding: 5px 10px;
+  background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px;
+}
+.slot-head-label {
+  font-size:10px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.5px; flex:1;
+}
+.slot-head-btns { display:flex; gap:4px; align-items:center; }
+
+.swap-btn, .sub-btn {
+  background: none; border: none; cursor: pointer;
+  font-size:15px; padding:0 2px; line-height:1;
+  transition: transform .2s, color .15s;
+}
+.swap-btn { color: var(--accent); }
+.swap-btn:hover { transform:rotate(180deg); color:#fff; }
+.sub-btn  { color: var(--muted); }
+.sub-btn:hover  { color: var(--green); transform: scale(1.2); }
+
+.slot-info {
+  padding: 8px 10px 6px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.slot-nome  { font-family:'Barlow Condensed'; font-size:16px; font-weight:800; line-height:1.1; }
+.slot-time  { font-size:10px; color:var(--muted); }
+.slot-camisa { font-family:'Barlow Condensed'; font-size:24px; font-weight:900; color:var(--accent); }
+
+.slot-acoes { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+.slot-action-btn {
+  width: 100%; padding: 7px 10px;
+  border: none; border-radius: 7px; cursor: pointer;
+  font-family:'Barlow Condensed'; font-size:14px; font-weight:700;
+  transition: transform .08s, filter .1s;
+  display: flex; justify-content: space-between; align-items: center;
+  line-height: 1;
+}
+.slot-action-btn:active { transform: scale(.95); }
+.slot-action-btn .sab-count {
+  background: rgba(0,0,0,.25);
+  border-radius: 20px; padding: 1px 8px;
+  font-size: 13px; font-weight:900;
+  min-width: 24px; text-align: center;
+}
+
+.banco-wrap {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+}
+.banco-grid { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
+.banco-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px;
+  font-family:'Barlow Condensed'; font-size:13px; font-weight:700;
+  color:var(--muted); display:flex; align-items:center; gap:6px;
+}
+.mini-pill { font-size:10px; padding:1px 6px; border-radius:10px; font-weight:700; }
+.mini-ok  { background:rgba(34,197,94,.2);  color:var(--green); }
+.mini-err { background:rgba(239,68,68,.2);  color:var(--red);   }
+
+.log-area {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px;
+  max-height: 200px; overflow-y:auto; margin-top:10px;
+}
+.log-item {
+  padding:5px 10px; border-radius:6px; background:var(--bg3);
+  margin-bottom:4px; font-size:12px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.log-ok  { color:var(--green); font-weight:700; }
+.log-err { color:var(--red);   font-weight:700; }
+
+/* modal substituição */
+.sub-modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); z-index:300;
+  align-items:center; justify-content:center;
+}
+.sub-modal-overlay.open { display:flex; }
+.sub-modal {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:14px; padding:24px; width:360px; max-width:95vw;
+  max-height:88vh; overflow-y:auto;
+}
+.sub-modal h3 {
+  font-family:'Barlow Condensed'; font-size:20px; font-weight:800;
+  margin-bottom:16px; color:var(--accent);
+}
+.sub-opcao {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:8px; cursor:pointer;
+  background:var(--bg3); border:1px solid var(--border);
+  margin-bottom:8px; transition: border-color .12s;
+}
+.sub-opcao:hover { border-color:var(--accent); }
+.sub-opcao-camisa {
+  font-family:'Barlow Condensed'; font-size:26px; font-weight:900;
+  color:var(--accent); min-width:36px; text-align:center;
+}
+.sub-opcao-nome { font-family:'Barlow Condensed'; font-size:16px; font-weight:800; }
+.sub-opcao-pos  { font-size:11px; color:var(--muted); }
+.sub-modal-sep  {
+  font-size:10px; color:var(--muted); text-transform:uppercase;
+  letter-spacing:.5px; margin:10px 0 6px;
+}
+.sub-modal-cancel {
+  width:100%; margin-top:8px; padding:10px;
+  background:none; border:1px solid var(--border);
+  color:var(--muted); border-radius:8px; cursor:pointer;
+  font-family:'Barlow Condensed'; font-size:15px;
+}
+.sub-modal-cancel:hover { color:var(--text); border-color:var(--muted); }
+</style>
+
+<!-- PLACAR -->
+<div class="placar-bar">
+  <div>
+    <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Partida</div>
+    <div class="placar-times">{{ partida['titulo'] }}</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:2px">{{ partida['time_a'] }} vs {{ partida['time_b'] }}</div>
+  </div>
+  <div style="display:flex;align-items:center">
+    <div style="text-align:center">
+      <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px">{{ partida['time_a'] }}</div>
+      <div class="placar-num" id="placar-a">{{ partida['placar_a'] }}</div>
+      {% if partida['status'] == 'em_andamento' %}
+      <div style="display:flex;gap:4px;margin-top:4px">
+        <button class="placar-btn" onclick="mudarPlacar('a',-1)">−</button>
+        <button class="placar-btn" onclick="mudarPlacar('a',1)">+</button>
+      </div>
+      {% endif %}
+    </div>
+    <div class="placar-sep">—</div>
+    <div style="text-align:center">
+      <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px">{{ partida['time_b'] }}</div>
+      <div class="placar-num" id="placar-b">{{ partida['placar_b'] }}</div>
+      {% if partida['status'] == 'em_andamento' %}
+      <div style="display:flex;gap:4px;margin-top:4px">
+        <button class="placar-btn" onclick="mudarPlacar('b',-1)">−</button>
+        <button class="placar-btn" onclick="mudarPlacar('b',1)">+</button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <a href="/relatorio/{{ partida['id'] }}" class="btn btn-secondary">📊 Relatório</a>
+    {% if partida['status'] == 'em_andamento' %}
+    <button onclick="encerrar()" class="btn btn-danger">⏹ Encerrar</button>
+    {% else %}
+    <span class="badge badge-done" style="font-size:14px;padding:8px 14px">✓ Encerrada</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- QUADRA -->
+<div class="quadra-wrap">
+  <div class="sec-label">🏐 EM QUADRA</div>
+  <div class="quadra-grid" id="quadra-grid"></div>
+</div>
+
+<div class="banco-wrap">
+  <div class="sec-label">🪑 BANCO / NÃO ESCALADOS</div>
+  <div class="banco-grid" id="banco-grid"></div>
+</div>
+
+<div>
+  <div class="sec-label">📝 LOG AO VIVO</div>
+  <div class="log-area" id="log">
+    {% for a in acoes %}
+    <div class="log-item">
+      <span>{{ a['nome'] }}</span>
+      <span class="{{ 'log-err' if 'erro' in a['tipo'] else 'log-ok' }}">{{ a['tipo'].replace('_',' ') }}</span>
+    </div>
+    {% endfor %}
+    {% if not acoes %}
+    <p style="color:var(--muted);font-size:12px;text-align:center;padding:14px">Aguardando ações...</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- MODAL SUBSTITUIÇÃO -->
+<div class="sub-modal-overlay" id="sub-overlay">
+  <div class="sub-modal">
+    <h3 id="sub-titulo">🔄 Substituir Jogador</h3>
+    <div id="sub-lista"></div>
+    <button class="sub-modal-cancel" onclick="fecharSub()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+const PARTIDA_ID    = {{ partida['id'] }};
+const PARTIDA_ATIVA = {{ 'true' if partida['status'] == 'em_andamento' else 'false' }};
+const POSICOES_CFG  = {{ posicoes | tojson }};
+let placarA = {{ partida['placar_a'] }};
+let placarB = {{ partida['placar_b'] }};
+
+const TODOS = [
+  {% for j in jogadores %}
+  { id:{{ j['id'] }}, nome:{{ j['nome']|tojson }}, camisa:{{ j['camisa'] }}, posicao:{{ j['posicao']|tojson }}, time:{{ j['time']|tojson }} },
+  {% endfor %}
+];
+
+const contagens = {};
+
+const SLOTS = [
+  { rotulo:'Ponteiro',   posicao:'Ponteiro',   swap:true,  segundo:false },
+  { rotulo:'Central',    posicao:'Central',    swap:true,  segundo:false },
+  { rotulo:'Oposto',     posicao:'Oposto',     swap:false, segundo:false },
+  { rotulo:'Líbero',     posicao:'Líbero',     swap:true,  isLibero:true, segundo:false },
+  { rotulo:'Central 2',  posicao:'Central',    swap:true,  segundo:true  },
+  { rotulo:'Levantador', posicao:'Levantador', swap:false, segundo:false },
+];
+
+const idxSlot = {};
+const subMap  = {};  // si -> jid (substituição manual)
+
+const COR_MAP = {
+  'btn-green':'#22c55e','btn-red':'#ef4444',
+  'btn-blue':'#3b82f6','btn-yellow':'#eab308','btn-orange':'#f97316'
+};
+const TEXT_MAP = {
+  'btn-green':'#000','btn-yellow':'#000'
+};
+
+function getGrupo(pos) { return TODOS.filter(j => j.posicao === pos); }
+
+function getJogadorSlot(si) {
+  if (subMap[si] != null) {
+    const j = TODOS.find(x => x.id === subMap[si]);
+    if (j) return j;
+  }
+  const slot  = SLOTS[si];
+  const grupo = getGrupo(slot.posicao);
+  if (!grupo.length) return null;
+  if (!slot.swap) return grupo[0];
+  if (idxSlot[si] === undefined) idxSlot[si] = slot.segundo ? Math.min(1, grupo.length-1) : 0;
+  return grupo[idxSlot[si]] || null;
+}
+
+function alternar(si) {
+  delete subMap[si];
+  const slot  = SLOTS[si];
+  const grupo = getGrupo(slot.posicao);
+  if (grupo.length < 2) return;
+  const parceiro = SLOTS.findIndex((s,i) => i !== si && s.posicao === slot.posicao && s.swap);
+  let cur = idxSlot[si] ?? (slot.segundo ? 1 : 0);
+  let bloq = parceiro >= 0 ? (idxSlot[parceiro] ?? (SLOTS[parceiro].segundo ? 1 : 0)) : -1;
+  let prox = (cur+1) % grupo.length, t = 0;
+  while (prox === bloq && t++ < grupo.length) prox = (prox+1) % grupo.length;
+  idxSlot[si] = prox;
+  render();
+}
+
+// ── SUBSTITUIÇÃO ──
+let slotSub = null;
+
+function abrirSub(si) {
+  slotSub = si;
+  const atual    = getJogadorSlot(si);
+  const slot     = SLOTS[si];
+  const emQuadra = new Set(SLOTS.map((_,i) => i===si ? null : getJogadorSlot(i)?.id).filter(Boolean));
+  const candidatos = TODOS.filter(j => j.id !== atual?.id && !emQuadra.has(j.id));
+  const mesmaPos   = candidatos.filter(j => j.posicao === slot.posicao);
+  const outros     = candidatos.filter(j => j.posicao !== slot.posicao);
+
+  document.getElementById('sub-titulo').textContent = `🔄 Substituir ${atual?.nome || slot.rotulo}`;
+  const lista = document.getElementById('sub-lista');
+  lista.innerHTML = '';
+
+  function addOpcao(j, destaque) {
+    const div = document.createElement('div');
+    div.className = 'sub-opcao';
+    if (destaque) div.style.borderColor = 'var(--accent)';
+    div.innerHTML = `
+      <div class="sub-opcao-camisa">#${j.camisa}</div>
+      <div style="flex:1">
+        <div class="sub-opcao-nome">${j.nome}</div>
+        <div class="sub-opcao-pos">${j.posicao} · ${j.time}</div>
+      </div>
+      ${destaque ? '<span style="font-size:10px;color:var(--accent);font-weight:700">Mesma pos.</span>' : ''}
+    `;
+    div.onclick = () => confirmarSub(j.id);
+    lista.appendChild(div);
+  }
+
+  if (!candidatos.length) {
+    lista.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Sem reservas disponíveis.</p>';
+  } else {
+    if (mesmaPos.length) {
+      const s = document.createElement('div'); s.className='sub-modal-sep'; s.textContent='Mesma posição';
+      lista.appendChild(s);
+      mesmaPos.forEach(j => addOpcao(j, true));
+    }
+    if (outros.length) {
+      const s = document.createElement('div'); s.className='sub-modal-sep'; s.textContent='Outras posições';
+      lista.appendChild(s);
+      outros.forEach(j => addOpcao(j, false));
+    }
+  }
+
+  document.getElementById('sub-overlay').classList.add('open');
+}
+
+function confirmarSub(jid) {
+  if (slotSub === null) return;
+  subMap[slotSub] = jid;
+  fecharSub();
+  render();
+  showFlash('✓ Substituição realizada');
+}
+function fecharSub() {
+  document.getElementById('sub-overlay').classList.remove('open');
+  slotSub = null;
+}
+document.getElementById('sub-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) fecharSub(); });
+
+// ── RENDER ──
+function render() { renderQuadra(); renderBanco(); }
+
+function renderQuadra() {
+  const grid = document.getElementById('quadra-grid');
+  grid.innerHTML = '';
+
+  SLOTS.forEach((slot, si) => {
+    const j   = getJogadorSlot(si);
+    const cfg = j ? POSICOES_CFG[j.posicao] : null;
+    const temSwap = slot.swap && getGrupo(slot.posicao).length > 1;
+
+    const div = document.createElement('div');
+    div.className = 'pos-slot' + (j ? ' ativo' : '') + (slot.isLibero ? ' libero' : '');
+
+    if (!j) {
+      div.innerHTML = `
+        <div class="slot-head"><span class="slot-head-label">${slot.rotulo}</span></div>
+        <div style="padding:24px;text-align:center;color:var(--muted);font-size:12px">Sem jogador</div>`;
+      grid.appendChild(div);
+      return;
+    }
+
+    // cabeçalho do slot
+    let html = `
+      <div class="slot-head">
+        <span class="slot-head-label">${slot.rotulo}</span>
+        <div class="slot-head-btns">
+          ${PARTIDA_ATIVA ? `<button class="sub-btn" onclick="abrirSub(${si})" title="Substituir">⇌</button>` : ''}
+          ${temSwap ? `<button class="swap-btn" onclick="alternar(${si})" title="Alternar">⇄</button>` : ''}
+        </div>
+      </div>
+      <div class="slot-info">
+        <div>
+          <div class="slot-nome">${j.nome}</div>
+          <div class="slot-time">${j.time}</div>
+        </div>
+        <div class="slot-camisa">#${j.camisa}</div>
+      </div>`;
+
+    // botões de ação ou badges somente leitura
+    if (PARTIDA_ATIVA && cfg && cfg.stats) {
+      html += '<div class="slot-acoes">';
+      for (const stat of cfg.stats) {
+        const key  = `${j.id}-${stat}`;
+        const cnt  = contagens[key] || 0;
+        const cor  = cfg.cores[stat] || 'btn-secondary';
+        const bg   = COR_MAP[cor] || '#444';
+        const tc   = TEXT_MAP[cor] || '#fff';
+        const lbl  = cfg.labels[stat] || stat;
+        html += `
+          <button class="slot-action-btn" style="background:${bg};color:${tc}"
+            id="sab-${j.id}-${stat}"
+            onclick="registrar(${j.id},'${stat}',this,${JSON.stringify(j.nome)},${JSON.stringify(lbl)})">
+            <span>${lbl}</span>
+            <span class="sab-count" id="cnt-${j.id}-${stat}">${cnt}</span>
+          </button>`;
+      }
+      html += '</div>';
+    } else if (cfg && cfg.stats) {
+      // partida encerrada: mostrar pills de contagem
+      const pills = cfg.stats.map(s => {
+        const v = contagens[`${j.id}-${s}`] || 0;
+        if (!v) return '';
+        const isErr = s.includes('erro');
+        return `<span class="mini-pill ${isErr?'mini-err':'mini-ok'}">${cfg.labels[s].replace(/^\S+\s/,'')} ${v}</span>`;
+      }).filter(Boolean).join('');
+      if (pills) html += `<div style="padding:8px;display:flex;flex-wrap:wrap;gap:4px">${pills}</div>`;
+    }
+
+    div.innerHTML = html;
+    grid.appendChild(div);
+  });
+}
+
+function renderBanco() {
+  const emQuadra = new Set(SLOTS.map((_, si) => getJogadorSlot(si)?.id).filter(Boolean));
+  const banco = document.getElementById('banco-grid');
+  banco.innerHTML = '';
+  let tem = false;
+  for (const j of TODOS) {
+    if (emQuadra.has(j.id)) continue;
+    tem = true;
+    const div = document.createElement('div');
+    div.className = 'banco-card';
+    div.innerHTML = `<span style="color:var(--accent)">#${j.camisa}</span> ${j.nome} <span style="font-size:10px;opacity:.6">${j.posicao}</span>`;
+    banco.appendChild(div);
+  }
+  if (!tem) banco.innerHTML = '<span style="color:var(--muted);font-size:12px">Todos escalados</span>';
+}
+
+// ── REGISTRAR AÇÃO ──
+async function registrar(jid, tipo, btn, nome, label) {
+  const key = `${jid}-${tipo}`;
+  contagens[key] = (contagens[key] || 0) + 1;
+  const cntEl = document.getElementById(`cnt-${jid}-${tipo}`);
+  if (cntEl) cntEl.textContent = contagens[key];
+  btn.style.transform = 'scale(.93)';
+  setTimeout(() => btn.style.transform = '', 120);
+
+  // log
+  const log = document.getElementById('log');
+  const ph  = log.querySelector('p'); if (ph) ph.remove();
+  const d   = document.createElement('div');
+  d.className = 'log-item';
+  const isErr = tipo.includes('erro');
+  const lbl   = label.replace(/^\S+\s/, '');
+  d.innerHTML = `<span>${nome}</span><span class="${isErr?'log-err':'log-ok'}">${lbl}</span>`;
+  log.insertBefore(d, log.firstChild);
+  if (log.children.length > 60) log.removeChild(log.lastChild);
+
+  try {
+    const res = await fetch('/api/acao', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ partida_id:PARTIDA_ID, jogador_id:jid, tipo })
+    });
+    showFlash(res.ok ? `✓ ${nome} — ${lbl}` : 'Erro ao salvar ação', res.ok);
+  } catch { showFlash('Sem conexão', false); }
+}
+
+async function mudarPlacar(time, delta) {
+  if (!PARTIDA_ATIVA) return;
+  if (time==='a') { placarA=Math.max(0,placarA+delta); document.getElementById('placar-a').textContent=placarA; }
+  else            { placarB=Math.max(0,placarB+delta); document.getElementById('placar-b').textContent=placarB; }
+  await fetch('/api/placar', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ partida_id:PARTIDA_ID, placar_a:placarA, placar_b:placarB }) });
+}
+
+async function encerrar() {
+  if (!confirm('Encerrar a partida e ir para o relatório?')) return;
+  await fetch(`/api/encerrar_partida/${PARTIDA_ID}`, { method:'POST' });
+  window.location.href = `/relatorio/${PARTIDA_ID}`;
+}
+
+render();
+</script>
+{% endblock %}

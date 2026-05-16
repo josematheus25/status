@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏐 VôleiStats Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --bg2: #111418;
+  --bg3: #1a1f28;
+  --border: #2a3040;
+  --accent: #f5a623;
+  --accent2: #e8380d;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --yellow: #eab308;
+  --orange: #f97316;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --card: #141820;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; top: 0; left: 0;
+  width: 220px; height: 100vh;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--accent);
+  line-height: 1;
+}
+.sidebar-logo span { color: var(--text); font-size: 13px; }
+.nav { flex: 1; padding: 16px 12px; }
+.nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  color: var(--muted); text-decoration: none;
+  font-size: 14px; font-weight: 500;
+  margin-bottom: 4px;
+  transition: all .15s;
+}
+.nav a:hover, .nav a.active {
+  background: var(--bg3);
+  color: var(--text);
+}
+.nav a.active { color: var(--accent); }
+.nav .icon { font-size: 16px; width: 20px; text-align: center; }
+/* ── MAIN ── */
+.main { margin-left: 220px; padding: 32px; min-height: 100vh; }
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.stat-card .num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 42px; font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+}
+.stat-card .lbl { color: var(--muted); font-size: 13px; margin-top: 4px; }
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 700; letter-spacing: .5px;
+  border: none; cursor: pointer; transition: all .12s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #f0c040; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+/* ── ACTION BUTTONS ── */
+.btn-green  { background: var(--green);  color: #000; font-size: 14px; }
+.btn-red    { background: var(--red);    color: #fff; font-size: 14px; }
+.btn-blue   { background: var(--blue);   color: #fff; font-size: 14px; }
+.btn-yellow { background: var(--yellow); color: #000; font-size: 14px; }
+.btn-orange { background: var(--orange); color: #fff; font-size: 14px; }
+.btn-green:hover  { filter: brightness(1.1); }
+.btn-red:hover    { filter: brightness(1.1); }
+.btn-blue:hover   { filter: brightness(1.1); }
+.btn-yellow:hover { filter: brightness(1.1); }
+.btn-orange:hover { filter: brightness(1.1); }
+.action-btn {
+  width: 100%; padding: 11px 14px;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 700;
+  transition: transform .08s, filter .1s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.action-btn:active { transform: scale(.96); }
+.action-btn .count {
+  background: rgba(0,0,0,.25);
+  border-radius: 20px; padding: 2px 10px;
+  font-size: 16px;
+}
+/* ── FORMS ── */
+input, select {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px;
+  padding: 10px 14px; font-size: 14px; width: 100%;
+  font-family: 'Barlow', sans-serif;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+label { font-size: 13px; color: var(--muted); margin-bottom: 5px; display: block; }
+.form-row { display: grid; gap: 14px; margin-bottom: 14px; }
+.form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+/* ── TABLES ── */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+tr:last-child td { border-bottom: none; }
+/* ── BADGE ── */
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+}
+.badge-pos { background: rgba(245,166,35,.15); color: var(--accent); }
+.badge-active { background: rgba(34,197,94,.15); color: var(--green); }
+.badge-done { background: rgba(107,114,128,.15); color: var(--muted); }
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 28px; }
+.page-header h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px; font-weight: 900; letter-spacing: 1px;
+}
+.page-header p { color: var(--muted); margin-top: 4px; font-size: 14px; }
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.7); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px; width: 480px; max-width: 95vw;
+}
+.modal h3 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 800; margin-bottom: 20px;
+}
+/* ── FLASH ── */
+.flash {
+  position: fixed; top: 20px; right: 20px; z-index: 999;
+  background: var(--green); color: #000;
+  padding: 12px 20px; border-radius: 8px;
+  font-weight: 700; font-size: 14px;
+  opacity: 0; transform: translateY(-10px);
+  transition: all .3s; pointer-events: none;
+}
+.flash.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>🏐 VôleiStats</h1>
+    <span>Pro Scout System</span>
+  </div>
+  <nav class="nav">
+    <a href="/" class="{{ 'active' if request.path=='/' }}">
+      <span class="icon">🏠</span> Início
+    </a>
+    <a href="/jogadores" class="{{ 'active' if '/jogadores' in request.path }}">
+      <span class="icon">👤</span> Jogadores
+    </a>
+    <a href="/partidas" class="{{ 'active' if '/partidas' in request.path }}">
+      <span class="icon">📋</span> Partidas
+    </a>
+  </nav>
+</aside>
+<main class="main">
+  {% block content %}{% endblock %}
+</main>
+<div class="flash" id="flash"></div>
+<script>
+function showFlash(msg, ok=true) {
+  const f = document.getElementById('flash');
+  f.textContent = msg;
+  f.style.background = ok ? 'var(--green)' : 'var(--red)';
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-header">
+  <h2>📋 PARTIDAS</h2>
+  <p>Gerencie e inicie partidas para scout em tempo real</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 400px;gap:24px;align-items:start">
+
+  <!-- Lista de partidas -->
+  <div class="card">
+    <h3 style="font-family:'Barlow Condensed';font-size:18px;font-weight:800;margin-bottom:18px">HISTÓRICO</h3>
+    {% if partidas %}
+    <div style="display:flex;flex-direction:column;gap:12px">
+      {% for p in partidas %}
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-family:'Barlow Condensed';font-size:18px;font-weight:800">{{ p['titulo'] }}</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:2px">{{ p['time_a'] }} vs {{ p['time_b'] }}</div>
+        </div>
+        <div style="text-align:center;margin:0 16px">
+          <div style="font-family:'Barlow Condensed';font-size:32px;font-weight:900;line-height:1">
+            {{ p['placar_a'] }}<span style="color:var(--muted)"> — </span>{{ p['placar_b'] }}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          {% if p['status'] == 'em_andamento' %}
+            <span class="badge badge-active">🟢 Ao Vivo</span>
+            <a href="/partida/{{ p['id'] }}" class="btn btn-sm btn-primary">ENTRAR →</a>
+          {% else %}
+            <span class="badge badge-done">✓ Encerrada</span>
+            <a href="/relatorio/{{ p['id'] }}" class="btn btn-sm btn-secondary">Ver Relatório</a>
+          {% endif %}
+          <form action="/partidas/deletar/{{ p['id'] }}" method="post" onsubmit="return confirm('Excluir esta partida e todos os seus dados permanentemente?')" style="margin:0">
+            <button type="submit" class="btn btn-sm btn-danger" style="font-size:11px;padding:3px 10px">🗑 Excluir</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--muted);text-align:center;padding:40px">Nenhuma partida ainda.</p>
+    {% endif %}
+  </div>
+
+  <!-- Nova partida -->
+  <div class="card">
+    <h3 style="font-family:'Barlow Condensed';font-size:18px;font-weight:800;margin-bottom:18px">+ NOVA PARTIDA</h3>
+    <form action="/partidas/nova" method="post">
+      <div class="form-row">
+        <div>
+          <label>Título da partida</label>
+          <input type="text" name="titulo" placeholder="Ex: Final do Campeonato" required>
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div>
+          <label>Time A</label>
+          <input type="text" name="time_a" id="inp-time-a" placeholder="Ex: ISR" required oninput="atualizarBotoesTimes()">
+        </div>
+        <div>
+          <label>Time B</label>
+          <input type="text" name="time_b" id="inp-time-b" placeholder="Ex: ABC" required oninput="atualizarBotoesTimes()">
+        </div>
+      </div>
+
+      <!-- JOGADORES -->
+      <div class="form-row">
+        <div>
+          <label>Selecionar Jogadores</label>
+
+          <!-- botões de seleção rápida por time -->
+          <div id="btns-time" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+
+          <!-- busca -->
+          <input type="text" id="busca-jogador" placeholder="🔍 Buscar jogador..." style="margin-bottom:8px" oninput="filtrarJogadores(this.value)">
+
+          <!-- lista de jogadores -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <!-- header com selecionar todos / limpar -->
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2)">
+              <span style="font-size:12px;color:var(--muted)" id="sel-count">0 selecionados</span>
+              <div style="display:flex;gap:8px">
+                <button type="button" onclick="selecionarTodos()" style="font-size:11px;padding:3px 10px" class="btn btn-sm btn-secondary">✓ Todos</button>
+                <button type="button" onclick="limparTodos()" style="font-size:11px;padding:3px 10px" class="btn btn-sm btn-secondary">✕ Limpar</button>
+              </div>
+            </div>
+
+            <div style="max-height:260px;overflow-y:auto" id="lista-jogadores">
+              {% if jogadores %}
+                {% set times = jogadores | map(attribute='time') | list | unique | sort %}
+                {% for time in times %}
+                <div class="grupo-time" data-time="{{ time }}">
+                  <div style="padding:5px 12px;background:rgba(245,166,35,.08);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-family:'Barlow Condensed';font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">{{ time }}</span>
+                    <button type="button" class="btn-time-sel" data-time="{{ time }}"
+                      onclick="selecionarTime('{{ time }}')"
+                      style="font-size:10px;padding:2px 8px;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--accent);border-radius:4px;cursor:pointer;font-family:'Barlow Condensed';font-weight:700">
+                      + Selecionar time
+                    </button>
+                  </div>
+                  {% for j in jogadores if j['time'] == time %}
+                  <label class="jog-label" data-nome="{{ j['nome']|lower }}" data-time="{{ j['time'] }}"
+                    style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 12px;border-bottom:1px solid var(--border);margin:0;color:var(--text);transition:background .1s">
+                    <input type="checkbox" name="jogadores" value="{{ j['id'] }}" class="jog-cb"
+                      style="width:auto;accent-color:var(--accent)" onchange="atualizarContagem()">
+                    <span style="font-weight:600">#{{ j['camisa'] }} {{ j['nome'] }}</span>
+                    <span class="badge badge-pos" style="margin-left:auto;font-size:11px">{{ j['posicao'] }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+                {% endfor %}
+              {% else %}
+                <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">
+                  <a href="/jogadores" style="color:var(--accent)">Cadastre jogadores primeiro →</a>
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px">🏐 INICIAR PARTIDA</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── SELEÇÃO POR TIME ──
+const JOGADORES = [
+  {% for j in jogadores %}
+  { id: {{ j['id'] }}, nome: {{ j['nome']|tojson }}, time: {{ j['time']|tojson }} },
+  {% endfor %}
+];
+
+// Extrair times únicos dos jogadores
+const TIMES = [...new Set(JOGADORES.map(j => j.time))].sort();
+
+function atualizarBotoesTimes() {
+  const timeA = document.getElementById('inp-time-a').value.trim();
+  const timeB = document.getElementById('inp-time-b').value.trim();
+  const wrap  = document.getElementById('btns-time');
+  wrap.innerHTML = '';
+
+  const candidatos = [];
+  if (timeA && TIMES.includes(timeA)) candidatos.push(timeA);
+  if (timeB && TIMES.includes(timeB)) candidatos.push(timeB);
+  // também mostrar qualquer time dos jogadores que combine (parcial)
+  if (!candidatos.length) return;
+
+  for (const t of candidatos) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-secondary';
+    btn.style.fontSize = '12px';
+    btn.innerHTML = `🏐 Selecionar time <strong>${t}</strong>`;
+    btn.onclick = () => selecionarTime(t);
+    wrap.appendChild(btn);
+  }
+}
+
+function selecionarTime(time) {
+  document.querySelectorAll('.jog-cb').forEach(cb => {
+    const label = cb.closest('.jog-label');
+    if (label && label.dataset.time === time) cb.checked = true;
+  });
+  atualizarContagem();
+  showFlash(`✓ Time ${time} selecionado`);
+}
+
+function selecionarTodos() {
+  document.querySelectorAll('.jog-label:not([style*="display: none"]) .jog-cb').forEach(cb => cb.checked = true);
+  atualizarContagem();
+}
+function limparTodos() {
+  document.querySelectorAll('.jog-cb').forEach(cb => cb.checked = false);
+  atualizarContagem();
+}
+
+function atualizarContagem() {
+  const n = document.querySelectorAll('.jog-cb:checked').length;
+  document.getElementById('sel-count').textContent = `${n} selecionado${n !== 1 ? 's' : ''}`;
+}
+
+function filtrarJogadores(q) {
+  q = q.toLowerCase().trim();
+  document.querySelectorAll('.jog-label').forEach(lbl => {
+    const match = !q || lbl.dataset.nome.includes(q);
+    lbl.style.display = match ? '' : 'none';
+  });
+  // esconder header de grupo se todos os jogadores do grupo estiverem ocultos
+  document.querySelectorAll('.grupo-time').forEach(grupo => {
+    const algumVisivel = [...grupo.querySelectorAll('.jog-label')].some(l => l.style.display !== 'none');
+    grupo.style.display = algumVisivel ? '' : 'none';
+  });
+}
+
+// highlight ao hover
+document.querySelectorAll('.jog-label').forEach(lbl => {
+  lbl.addEventListener('mouseenter', () => lbl.style.background = 'rgba(255,255,255,.04)');
+  lbl.addEventListener('mouseleave', () => lbl.style.background = '');
+});
+
+atualizarContagem();
+</script>
+{% endblock %}
